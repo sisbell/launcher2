@@ -23,6 +23,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.widget.Toast;
 
+import android.util.Log;
+
 import com.android.launcher.R;
 
 public class InstallShortcutReceiver extends BroadcastReceiver {
@@ -41,16 +43,17 @@ public class InstallShortcutReceiver extends BroadcastReceiver {
         }
 
         int screen = Launcher.getScreen();
-
-        if (!installShortcut(context, data, screen)) {
+        //TODO: change the hardcoded co-ods:
+        if (!installShortcut(context, data, screen, LauncherSettings.Favorites.CONTAINER_DESKTOP, 0, 0, true)) {
             // The target screen is full, let's try the other screens
             for (int i = 0; i < Launcher.SCREEN_COUNT; i++) {
-                if (i != screen && installShortcut(context, data, i)) break;
+                if (i != screen && installShortcut(context, data, i, LauncherSettings.Favorites.CONTAINER_DESKTOP, 0, 0, true)) break;
             }
         }
     }
 
-    private boolean installShortcut(Context context, Intent data, int screen) {
+    private boolean installShortcut(Context context, Intent data, int screen, int container, int xCoOd, int yCoOd
+            , boolean notify) {
         String name = data.getStringExtra(Intent.EXTRA_SHORTCUT_NAME);
 
         if (findEmptyCell(context, mCoordinates, screen)) {
