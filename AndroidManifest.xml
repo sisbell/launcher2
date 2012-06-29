@@ -109,6 +109,7 @@
             android:permission="com.android.launcher.permission.INSTALL_SHORTCUT">
             <intent-filter>
                 <action android:name="com.android.launcher.action.INSTALL_SHORTCUT" />
+				<action android:name="com.android.launcher.action.INSTALL_WIDGET" />
             </intent-filter>
         </receiver>
 

@@ -17,6 +17,7 @@
 package com.android.launcher2;
 
 import android.app.SearchManager;
+import android.appwidget.AppWidgetHost;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.BroadcastReceiver;
@@ -1781,6 +1782,25 @@ public class LauncherModel extends BroadcastReceiver {
 
         return info;
     }
+
+ // TODO: hard-coded
+	LauncherAppWidgetInfo addAppWidget(Context context, Intent data,
+			long container, int screen, int cellX, int cellY, boolean notify) {	
+		ComponentName cn = new ComponentName("com.google.android.apps.books",
+				"com.google.android.apps.books.appwidget.BooksAppWidgetProvider");
+
+		AppWidgetHost appWidgetHost = new LauncherAppWidgetHost(context, 1024);
+		int id = appWidgetHost.allocateAppWidgetId();
+		AppWidgetManager.getInstance(context).bindAppWidgetId(id, cn);
+
+		LauncherAppWidgetInfo launcherInfo = new LauncherAppWidgetInfo(id);
+		launcherInfo.itemType = LauncherSettings.Favorites.ITEM_TYPE_APPWIDGET;
+		launcherInfo.providerName = cn;
+
+		LauncherModel.addItemToDatabase(context, launcherInfo, container,
+				screen, cellX, cellY, notify);
+		return launcherInfo;
+	}
 
     /**
      * Attempts to find an AppWidgetProviderInfo that matches the given component.

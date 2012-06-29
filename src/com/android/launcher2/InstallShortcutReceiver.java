@@ -23,14 +23,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.widget.Toast;
 
-import android.util.Log;
-
 import com.android.launcher.R;
 
 public class InstallShortcutReceiver extends BroadcastReceiver {
     public static final String ACTION_INSTALL_SHORTCUT =
             "com.android.launcher.action.INSTALL_SHORTCUT";
 
+    public static final String ACTION_INSTALL_WIDGET =
+            "com.android.launcher.action.INSTALL_WIDGET";
+    
     // A mime-type representing shortcut data
     public static final String SHORTCUT_MIMETYPE =
             "com.android.launcher/shortcut";
@@ -38,20 +39,33 @@ public class InstallShortcutReceiver extends BroadcastReceiver {
     private final int[] mCoordinates = new int[2];
 
     public void onReceive(Context context, Intent data) {
-        if (!ACTION_INSTALL_SHORTCUT.equals(data.getAction())) {
-            return;
-        }
-
-        int screen = Launcher.getScreen();
-        //TODO: change the hardcoded co-ods:
-        if (!installShortcut(context, data, screen, LauncherSettings.Favorites.CONTAINER_DESKTOP, 0, 0, true)) {
-            // The target screen is full, let's try the other screens
-            for (int i = 0; i < Launcher.SCREEN_COUNT; i++) {
-                if (i != screen && installShortcut(context, data, i, LauncherSettings.Favorites.CONTAINER_DESKTOP, 0, 0, true)) break;
+        if (ACTION_INSTALL_SHORTCUT.equals(data.getAction())) {
+            int screen = Launcher.getScreen();
+            //TODO: change the hardcoded co-ods:
+            if (!installShortcut(context, data, screen, LauncherSettings.Favorites.CONTAINER_DESKTOP, 0, 0, true)) {
+                // The target screen is full, let's try the other screens
+                for (int i = 0; i < Launcher.SCREEN_COUNT; i++) {
+                    if (i != screen && installShortcut(context, data, i, LauncherSettings.Favorites.CONTAINER_DESKTOP, 0, 0, true)) break;
+                }
             }
+        } else if (ACTION_INSTALL_WIDGET.equals(data.getAction())) {
+        	//TODO: hard-coded
+        	//TODO: test
+        	installWidget(context, data, 0, LauncherSettings.Favorites.CONTAINER_DESKTOP ,0, 0, true);
         }
     }
+    
 
+	private boolean installWidget(Context context, Intent data, int screen,
+			int container, int xCoOd, int yCoOd, boolean notify) {
+		LauncherApplication app = (LauncherApplication) context
+				.getApplicationContext();
+		LauncherAppWidgetInfo info = app.getModel().addAppWidget(context, data,
+				container, screen, xCoOd, yCoOd, true);
+
+		return true;
+	}
+    
     private boolean installShortcut(Context context, Intent data, int screen, int container, int xCoOd, int yCoOd
             , boolean notify) {
         String name = data.getStringExtra(Intent.EXTRA_SHORTCUT_NAME);
