@@ -33,6 +33,8 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	public static final String RESULT_INVALID_VERSION = "RESULT_INVALID_VERSION";
 	
 	public static final String RESULT_MISSING_REQUIRED_PARAMETER = "RESULT_MISSING_REQUIRED_PARAMETER";
+	
+	public static final String RESULT_INVALID_JSON = "RESULT_INVALID_JSON";
 
 	/**
 	 * Unknown email failure
@@ -57,11 +59,15 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		List<Bundle> bundles = null;
 		if (intent.hasExtra("homescreen")) {
 			bundles = fromIntentToBundles(intent);
+			if(bundles.isEmpty()) {
+				
+			}
 		} else {
-			return;// TODO: return error
+			sendResponse(context, null, true);
+			return;
 		}
-		
-		
+
+			
 		boolean hasError = false;
 		
 		JSONArray messages = new JSONArray();
@@ -83,12 +89,25 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 			}			
 		}
 		
-		sendResponse(messages, hasError);		
+		sendResponse(context, messages, hasError);		
 	}
 	
-	private void sendResponse(JSONArray items, boolean isSuccess) {
-		//TODO: Send back
-		Log.d("Homescreen", items.toString());
+	private void sendResponse(Context context, JSONArray items, boolean isSuccess) {
+		Intent result = new Intent(
+				"com.android.homescreen.CONFIGURE_HOMESCREEN_RESULT");
+		result.putExtra("success", isSuccess);		
+		result.putExtra("version", "1.0");//TODO - hard-coded
+		result.putExtra("intent", "com.android.homescreen.CONFIGURE_HOMESCREEN");
+		
+		if(items != null) {
+			Log.d("Homescreen", items.toString());
+			result.putExtra("homescreen", items.toString());		
+		} else {
+			result.putExtra("errorCode", 0);
+			result.putExtra("errorMessage", RESULT_MISSING_REQUIRED_PARAMETER);			
+		}
+		
+		context.sendBroadcast(result);
 	}
 	
 	private JSONObject buildResponse(Bundle options, boolean isSuccess, int errorCode, String errorMessage) {
