@@ -50,6 +50,7 @@ import android.util.Log;
 
 import com.android.launcher.R;
 import com.android.launcher2.InstallWidgetReceiver.WidgetMimeTypeHandlerData;
+import com.android.launcher2.LauncherSettings.Favorites;
 
 import java.lang.ref.WeakReference;
 import java.net.URISyntaxException;
@@ -1785,9 +1786,10 @@ public class LauncherModel extends BroadcastReceiver {
 
  // TODO: hard-coded
 	LauncherAppWidgetInfo addAppWidget(Context context, Intent data,
-			long container, int screen, int cellX, int cellY, boolean notify) {	
-		ComponentName cn = new ComponentName("com.google.android.apps.books",
-				"com.google.android.apps.books.appwidget.BooksAppWidgetProvider");
+			long container, int screen, int cellX, int cellY, int spanX, int spanY, boolean notify) {	
+		
+		ComponentName cn = new ComponentName("com.telenav.app.android.cingular",
+				"com.telenav.searchwidget.android.SearchWidgetProviderMini");
 
 		AppWidgetHost appWidgetHost = new LauncherAppWidgetHost(context, 1024);
 		int id = appWidgetHost.allocateAppWidgetId();
@@ -1796,7 +1798,9 @@ public class LauncherModel extends BroadcastReceiver {
 		LauncherAppWidgetInfo launcherInfo = new LauncherAppWidgetInfo(id);
 		launcherInfo.itemType = LauncherSettings.Favorites.ITEM_TYPE_APPWIDGET;
 		launcherInfo.providerName = cn;
-
+		launcherInfo.spanX = spanX;
+		launcherInfo.spanY = spanY;
+				
 		LauncherModel.addItemToDatabase(context, launcherInfo, container,
 				screen, cellX, cellY, notify);
 		return launcherInfo;

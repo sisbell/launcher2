@@ -110,7 +110,7 @@ import java.util.HashMap;
  */
 public final class Launcher extends Activity
         implements View.OnClickListener, OnLongClickListener, LauncherModel.Callbacks,
-                   AllAppsView.Watcher, View.OnTouchListener {
+                   AllAppsView.Watcher, View.OnTouchListener  {
     static final String TAG = "Launcher";
     static final boolean LOGD = false;
 

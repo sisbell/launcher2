@@ -48,24 +48,9 @@ public class InstallShortcutReceiver extends BroadcastReceiver {
                     if (i != screen && installShortcut(context, data, i, LauncherSettings.Favorites.CONTAINER_DESKTOP, 0, 0, true)) break;
                 }
             }
-        } else if (ACTION_INSTALL_WIDGET.equals(data.getAction())) {
-        	//TODO: hard-coded
-        	//TODO: test
-        	installWidget(context, data, 0, LauncherSettings.Favorites.CONTAINER_DESKTOP ,0, 0, true);
-        }
+        } 
     }
-    
-
-	private boolean installWidget(Context context, Intent data, int screen,
-			int container, int xCoOd, int yCoOd, boolean notify) {
-		LauncherApplication app = (LauncherApplication) context
-				.getApplicationContext();
-		LauncherAppWidgetInfo info = app.getModel().addAppWidget(context, data,
-				container, screen, xCoOd, yCoOd, true);
-
-		return true;
-	}
-    
+      
     private boolean installShortcut(Context context, Intent data, int screen, int container, int xCoOd, int yCoOd
             , boolean notify) {
         String name = data.getStringExtra(Intent.EXTRA_SHORTCUT_NAME);
