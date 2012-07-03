@@ -47,13 +47,32 @@ public class InstallShortcutReceiver extends BroadcastReceiver {
                 for (int i = 0; i < Launcher.SCREEN_COUNT; i++) {
                     if (i != screen && installShortcut(context, data, i, LauncherSettings.Favorites.CONTAINER_DESKTOP, 0, 0, true)) break;
                 }
+        if (!ACTION_INSTALL_SHORTCUT.equals(data.getAction())) {
+            return;
+        }
+
+//        int screen = Launcher.getScreen();        
+        int x = data.getIntExtra( "x", -1 );
+        int y = data.getIntExtra( "y", -1 );
+        System.out.println("XXXX.. X cood recvd = " + x);
+        
+        if (!installShortcut(context, data, screen, LauncherSettings.Favorites.CONTAINER_DESKTOP, x, y, true)) {
+            // The target screen is full, let's try the other screens
+            for (int i = 0; i < Launcher.SCREEN_COUNT; i++) {
+                if (i != screen && installShortcut(context, data, i, LauncherSettings.Favorites.CONTAINER_DESKTOP, 0, 0, true)) break;
             }
-        } 
+        }
+    }
+        }
     }
       
     private boolean installShortcut(Context context, Intent data, int screen, int container, int xCoOd, int yCoOd
             , boolean notify) {
         String name = data.getStringExtra(Intent.EXTRA_SHORTCUT_NAME);
+        if (xCoOd != -1 && yCoOd != -1) {
+            mCoordinates[0] = xCoOd;
+            mCoordinates[1] = yCoOd;            
+        }
 
         if (findEmptyCell(context, mCoordinates, screen)) {
             Intent intent = data.getParcelableExtra(Intent.EXTRA_SHORTCUT_INTENT);
@@ -67,9 +86,16 @@ public class InstallShortcutReceiver extends BroadcastReceiver {
                 boolean duplicate = data.getBooleanExtra(Launcher.EXTRA_SHORTCUT_DUPLICATE, true);
                 if (duplicate || !LauncherModel.shortcutExists(context, name, intent)) {
                     LauncherApplication app = (LauncherApplication) context.getApplicationContext();
-                    ShortcutInfo info = app.getModel().addShortcut(context, data,
+                    ShortcutInfo info;
+                    if (xCoOd == -1 && yCoOd == -1) {
+                        info = app.getModel().addShortcut(context, data,
                             LauncherSettings.Favorites.CONTAINER_DESKTOP, screen, mCoordinates[0],
                             mCoordinates[1], true);
+                    } else {
+                        info = app.getModel().addShortcut(context, data,
+                                LauncherSettings.Favorites.CONTAINER_DESKTOP, screen, xCoOd,
+                                yCoOd, true);
+                    }
                     if (info != null) {
                         Toast.makeText(context, context.getString(R.string.shortcut_installed, name),
                                 Toast.LENGTH_SHORT).show();
