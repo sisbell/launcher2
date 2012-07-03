@@ -152,19 +152,22 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	
 	private List<Bundle> fromIntentToBundles(Intent intent) {
 		try {
-			JSONObject jsonObject = new JSONObject(
+			JSONArray bundledArray = new JSONArray(
 					intent.getStringExtra("homescreen"));
-			if (jsonObject.has("homescreen")) {// TODO: better to use
-												// homescreens
-				JSONArray array = jsonObject.getJSONArray("homescreen");
-				return fromJsonToBundles(array);
+
+			// TODO: better to use homescreens
+			if (bundledArray != null) {
+				return fromJsonToBundles(bundledArray);
 			}
+
 		} catch (JSONException e) {
 			e.printStackTrace();
-		}		
+		}
 		return new ArrayList<Bundle>();
 	}
-	private List<Bundle> fromJsonToBundles(JSONArray items) {
+	
+	
+ 	private List<Bundle> fromJsonToBundles(JSONArray items) {
 		ArrayList<Bundle> bundles = new ArrayList<Bundle>();
 	
 	        try {
