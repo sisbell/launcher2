@@ -69,9 +69,10 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		List<Bundle> bundles = null;
 		if (intent.hasExtra("homescreen")) {
 			bundles = fromIntentToBundles(intent);
+			
 			if(bundles.isEmpty()) {
 				sendResponse(context, null, false, RESULT_INVALID_JSON);
-			}
+
 		} else {
 			sendResponse(context, null, false, RESULT_MISSING_REQUIRED_PARAMETER);
 			return;
@@ -83,7 +84,10 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		JSONArray messages = new JSONArray();
 				
 		for(Bundle options : bundles) {
-			if (hasRequiredOptions(options)) {
+            Log.d("XXXX", "in foroption =  " + options.toString());
+
+			if (hasRequiredOptions(options.getBundle( "jsonObject" ))) {
+			    Log.d("XXXX", "here");
 				int containerType = options.getInt(OPTIONS_CONTAINER) > 0 ? LauncherSettings.Favorites.CONTAINER_DESKTOP
 						: LauncherSettings.Favorites.CONTAINER_HOTSEAT;
 
@@ -99,7 +103,8 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 			}			
 		}
 		
-		sendResponse(context, messages, hasError, null);		
+		sendResponse(context, messages, hasError, null);
+		}
 	}
 	
 	private void sendResponse(Context context, JSONArray items, boolean isSuccess, String errorMessage) {
@@ -109,8 +114,8 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		result.putExtra("version", "1.0");//TODO - hard-coded
 		result.putExtra("intent", "com.android.homescreen.CONFIGURE_HOMESCREEN");
 		
-		if(items != null) {
-			Log.i("Homescreen", items.toString());
+		if (items != null) {
+			Log.d("Homescreen", items.toString());
 			result.putExtra("homescreen", items.toString());		
 		} else {
 			result.putExtra("errorCode", 0);
@@ -222,6 +227,7 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 			boolean notify) {
 		LauncherApplication app = (LauncherApplication) context
 				.getApplicationContext();
+		Log.d("HomeScreenConfigurationReceiver.installWidget", "Installing widget.. data: " + data.toString());
 		return app.getModel().addAppWidget(context, data,
 				container, screen, xCoOd, yCoOd, spanX, spanY, true);
 	}
@@ -242,6 +248,11 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		} catch (NumberFormatException e) {
 			return false;
 		}
+	}
+
+
+	private boolean installShortCut() {
+	    return false;
 
 	}
 }
