@@ -7,12 +7,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.android.gallery3d.ui.Log;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 
 public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 
@@ -26,6 +25,11 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	public static final String OPTIONS_Y = "y";
 	public static final String OPTIONS_ROWS = "rows";
 	public static final String OPTIONS_COLUMNS = "cols";
+	
+	/**
+	 * Version of this API
+	 */
+	public static final String OPTIONS_VERSION = "version";
 	
 	/**
 	 * The protocol version of this service is incorrect
@@ -56,18 +60,24 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
+		Log.i("Homescreen", "starting configuration");
+		if (!isVersionProtocolSupported(intent.getExtras())) {
+			sendResponse(context, null, false, RESULT_INVALID_VERSION);
+			return;
+		}
+		
 		List<Bundle> bundles = null;
 		if (intent.hasExtra("homescreen")) {
 			bundles = fromIntentToBundles(intent);
 			if(bundles.isEmpty()) {
-				
+				sendResponse(context, null, false, RESULT_INVALID_JSON);
 			}
 		} else {
-			sendResponse(context, null, true);
+			sendResponse(context, null, false, RESULT_MISSING_REQUIRED_PARAMETER);
 			return;
 		}
 
-			
+	
 		boolean hasError = false;
 		
 		JSONArray messages = new JSONArray();
@@ -89,10 +99,10 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 			}			
 		}
 		
-		sendResponse(context, messages, hasError);		
+		sendResponse(context, messages, hasError, null);		
 	}
 	
-	private void sendResponse(Context context, JSONArray items, boolean isSuccess) {
+	private void sendResponse(Context context, JSONArray items, boolean isSuccess, String errorMessage) {
 		Intent result = new Intent(
 				"com.android.homescreen.CONFIGURE_HOMESCREEN_RESULT");
 		result.putExtra("success", isSuccess);		
@@ -100,12 +110,15 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		result.putExtra("intent", "com.android.homescreen.CONFIGURE_HOMESCREEN");
 		
 		if(items != null) {
-			Log.d("Homescreen", items.toString());
+			Log.i("Homescreen", items.toString());
 			result.putExtra("homescreen", items.toString());		
 		} else {
 			result.putExtra("errorCode", 0);
-			result.putExtra("errorMessage", RESULT_MISSING_REQUIRED_PARAMETER);			
+			if(errorMessage != null) {
+				result.putExtra("errorMessage", errorMessage);			
+			}
 		}
+		Log.i("Homescreen", errorMessage);
 		
 		context.sendBroadcast(result);
 	}
@@ -119,7 +132,7 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 			payload.put("errorMessage", errorMessage);
 			return payload;
 		} catch (JSONException e) {
-			
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -147,7 +160,7 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 				return fromJsonToBundles(array);
 			}
 		} catch (JSONException e) {
-		
+			e.printStackTrace();
 		}		
 		return new ArrayList<Bundle>();
 	}
@@ -174,7 +187,7 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	                bundles.add(bundle);
 	            }
 	        } catch ( JSONException je ) {
-	        	
+	        	je.printStackTrace();
 	        }
 
 		return bundles;
@@ -208,5 +221,24 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 				.getApplicationContext();
 		return app.getModel().addAppWidget(context, data,
 				container, screen, xCoOd, yCoOd, spanX, spanY, true);
+	}
+	
+	/**
+	 * Returns true if version protocol is supported, otherwise false
+	 * 
+	 * @param options
+	 *            email account options
+	 * @return true if version protocol is supported, otherwise false
+	 */
+	private static boolean isVersionProtocolSupported(Bundle options) {
+		// TODO: Wouldn't this be better as a float: options.getFloat?
+		try {
+			Float version = Float.valueOf(options.getString(OPTIONS_VERSION,
+					"0.0"));
+			return !version.equals(0.0f) && (version <= SUPPORTED_VERSION);
+		} catch (NumberFormatException e) {
+			return false;
+		}
+
 	}
 }
