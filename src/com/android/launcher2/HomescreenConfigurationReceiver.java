@@ -7,7 +7,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.android.gallery3d.ui.Log;
+import android.util.Log;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -60,9 +60,9 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		if (intent.hasExtra("homescreen")) {
 			bundles = fromIntentToBundles(intent);
 			if(bundles.isEmpty()) {
-				
+
 			}
-		} else {
+		} else {		    
 			sendResponse(context, null, true);
 			return;
 		}
@@ -139,15 +139,16 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	
 	private List<Bundle> fromIntentToBundles(Intent intent) {
 		try {
-			JSONObject jsonObject = new JSONObject(
+			JSONArray bundledArray = new JSONArray(
 					intent.getStringExtra("homescreen"));
-			if (jsonObject.has("homescreen")) {// TODO: better to use
-												// homescreens
-				JSONArray array = jsonObject.getJSONArray("homescreen");
-				return fromJsonToBundles(array);
-			}
-		} catch (JSONException e) {
-		
+			
+			// TODO: better to use homescreens
+			if (bundledArray != null) {
+			    return fromJsonToBundles(bundledArray);  
+			}			
+			
+		} catch (JSONException e) {		    
+		    e.printStackTrace();
 		}		
 		return new ArrayList<Bundle>();
 	}
