@@ -7,11 +7,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.android.launcher.R;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 
@@ -61,10 +64,10 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		Log.i("Homescreen", "starting configuration");
-		if (!isVersionProtocolSupported(intent.getExtras())) {
-			sendResponse(context, null, false, RESULT_INVALID_VERSION);
-			return;
-		}
+//		if (!isVersionProtocolSupported(intent.getExtras())) {
+//			sendResponse(context, null, false, RESULT_INVALID_VERSION);
+//			return;
+//		}
 		
 		List<Bundle> bundles = null;
 		if (intent.hasExtra("homescreen")) {
@@ -72,7 +75,7 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 			
 			if(bundles.isEmpty()) {
 				sendResponse(context, null, false, RESULT_INVALID_JSON);
-
+			}
 		} else {
 			sendResponse(context, null, false, RESULT_MISSING_REQUIRED_PARAMETER);
 			return;
@@ -84,10 +87,14 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		JSONArray messages = new JSONArray();
 				
 		for(Bundle options : bundles) {
-            Log.d("XXXX", "in foroption =  " + options.toString());
+            JSONObject payload = null;
+            try {
+                payload = new JSONObject(options.getString( "jsonObject" ));
+            } catch ( JSONException e ) {
+                e.printStackTrace();
+            }
 
-			if (hasRequiredOptions(options.getBundle( "jsonObject" ))) {
-			    Log.d("XXXX", "here");
+			if (hasRequiredOptions(payload)) {
 				int containerType = options.getInt(OPTIONS_CONTAINER) > 0 ? LauncherSettings.Favorites.CONTAINER_DESKTOP
 						: LauncherSettings.Favorites.CONTAINER_HOTSEAT;
 
@@ -105,7 +112,7 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		
 		sendResponse(context, messages, hasError, null);
 		}
-	}
+	
 	
 	private void sendResponse(Context context, JSONArray items, boolean isSuccess, String errorMessage) {
 		Intent result = new Intent(
@@ -120,10 +127,11 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		} else {
 			result.putExtra("errorCode", 0);
 			if(errorMessage != null) {
-				result.putExtra("errorMessage", errorMessage);			
+				result.putExtra("errorMessage", errorMessage);	
+				Log.i("Homescreen", errorMessage);
 			}
 		}
-		Log.i("Homescreen", errorMessage);
+		
 		
 		context.sendBroadcast(result);
 	}
@@ -142,15 +150,19 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		return null;
 	}
 
-	private boolean hasRequiredOptions(Bundle options) {
-		boolean hasOptions = options.containsKey(OPTIONS_TYPE)
-				&& options.containsKey(OPTIONS_PACKAGE_NAME)
-				&& options.containsKey(OPTIONS_CLASS_NAME)
-				&& options.containsKey(OPTIONS_CONTAINER);
+	private boolean hasRequiredOptions(JSONObject options) {
+		boolean hasOptions = options.has(OPTIONS_TYPE)
+				&& options.has(OPTIONS_PACKAGE_NAME)
+				&& options.has(OPTIONS_CLASS_NAME)
+				&& options.has(OPTIONS_CONTAINER);
 		
-		if(hasOptions && options.getInt(OPTIONS_CONTAINER) > 0 ) {
-			 return options.containsKey(OPTIONS_SCREEN);
-		}
+		try {
+            if(hasOptions && options.getInt(OPTIONS_CONTAINER) > 0 ) {
+            	 return options.has(OPTIONS_SCREEN);
+            }
+        } catch ( JSONException e ) {
+            e.printStackTrace();
+        }
 		
 		return hasOptions;
 	}
@@ -159,7 +171,7 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 		try {
 			JSONArray bundledArray = new JSONArray(
 					intent.getStringExtra("homescreen"));
-
+			Log.d("fromIntentToBundles", "bundledArray = " + bundledArray.toString());
 			// TODO: better to use homescreens
 			if (bundledArray != null) {
 				return fromJsonToBundles(bundledArray);
@@ -197,7 +209,7 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	        } catch ( JSONException je ) {
 	        	je.printStackTrace();
 	        }
-
+	        Log.d("XXXX", "fromJsonToBundles.bundles = " + bundles.toString());
 		return bundles;
 		
 	}
@@ -251,8 +263,84 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	}
 
 
-	private boolean installShortCut() {
-	    return false;
-
-	}
+//	private boolean installShortCut(Context context, Intent data, int screen, int container, int xCoOd, int yCoOd
+//            , boolean notify) {
+//	    
+//
+//        String name = data.getStringExtra(Intent.EXTRA_SHORTCUT_NAME);
+//       
+//
+//        if (findEmptyCell(context, new int[] {xCoOd, yCoOd}, screen)) {
+//            Intent intent = data.getParcelableExtra(Intent.EXTRA_SHORTCUT_INTENT);
+//            if (intent != null) {
+//                if (intent.getAction() == null) {
+//                    intent.setAction(Intent.ACTION_VIEW);
+//                }
+//
+//                // By default, we allow for duplicate entries (located in
+//                // different places)
+//                boolean duplicate = data.getBooleanExtra(Launcher.EXTRA_SHORTCUT_DUPLICATE, true);
+//                if (duplicate || !LauncherModel.shortcutExists(context, name, intent)) {
+//                    LauncherApplication app = (LauncherApplication) context.getApplicationContext();
+//                    ShortcutInfo info;
+//                    if (xCoOd == -1 && yCoOd == -1) {
+//                        info = app.getModel().addShortcut(context, data,
+//                            LauncherSettings.Favorites.CONTAINER_DESKTOP, screen, mCoordinates[0],
+//                            mCoordinates[1], true);
+//                    } else {
+//                        info = app.getModel().addShortcut(context, data,
+//                                LauncherSettings.Favorites.CONTAINER_DESKTOP, screen, xCoOd,
+//                                yCoOd, true);
+//                    }
+//                    if (info != null) {
+//                        Toast.makeText(context, context.getString(R.string.shortcut_installed, name),
+//                                Toast.LENGTH_SHORT).show();
+//                    } else {
+//                        return false;
+//                    }
+//                } else {
+//                    Toast.makeText(context, context.getString(R.string.shortcut_duplicate, name),
+//                            Toast.LENGTH_SHORT).show();
+//                }
+//
+//                return true;
+//            }
+//        } else {
+//            Toast.makeText(context, context.getString(R.string.out_of_space),
+//                    Toast.LENGTH_SHORT).show();
+//        }
+//
+//        return false;
+//    
+//	    return false;
+//
+//	}
+//	
+//	private static boolean findEmptyCell(Context context, int[] xy, int screen) {
+//        final int xCount = LauncherModel.getCellCountX();
+//        final int yCount = LauncherModel.getCellCountY();
+//        boolean[][] occupied = new boolean[xCount][yCount];
+//
+//        ArrayList<ItemInfo> items = LauncherModel.getItemsInLocalCoordinates(context);
+//        ItemInfo item = null;
+//        int cellX, cellY, spanX, spanY;
+//        for (int i = 0; i < items.size(); ++i) {
+//            item = items.get(i);
+//            if (item.container == LauncherSettings.Favorites.CONTAINER_DESKTOP) {
+//                if (item.screen == screen) {
+//                    cellX = item.cellX;
+//                    cellY = item.cellY;
+//                    spanX = item.spanX;
+//                    spanY = item.spanY;
+//                    for (int x = cellX; x < cellX + spanX && x < xCount; x++) {
+//                        for (int y = cellY; y < cellY + spanY && y < yCount; y++) {
+//                            occupied[x][y] = true;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        return CellLayout.findVacantCell(xy, 1, 1, xCount, yCount, occupied);
+//    }
 }
