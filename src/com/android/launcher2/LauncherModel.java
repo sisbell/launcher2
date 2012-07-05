@@ -1785,12 +1785,9 @@ public class LauncherModel extends BroadcastReceiver {
     }
 
  // TODO: hard-coded
-	LauncherAppWidgetInfo addAppWidget(Context context, Intent data,
+	LauncherAppWidgetInfo addAppWidget(Context context, ComponentName cn,
 			long container, int screen, int cellX, int cellY, int spanX, int spanY, boolean notify) {	
 		
-		ComponentName cn = new ComponentName("com.telenav.app.android.cingular",
-				"com.telenav.searchwidget.android.SearchWidgetProviderMini");
-
 		AppWidgetHost appWidgetHost = new LauncherAppWidgetHost(context, 1024);
 		int id = appWidgetHost.allocateAppWidgetId();
 		AppWidgetManager.getInstance(context).bindAppWidgetId(id, cn);
