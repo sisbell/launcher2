@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import com.android.launcher.R;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -98,7 +99,10 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 				int containerType = options.getInt(OPTIONS_CONTAINER) > 0 ? LauncherSettings.Favorites.CONTAINER_DESKTOP
 						: LauncherSettings.Favorites.CONTAINER_HOTSEAT;
 
-				installWidget(context, intent, options.getInt(OPTIONS_SCREEN, -1),
+				ComponentName cn = new ComponentName(options.getString(OPTIONS_PACKAGE_NAME)
+						, options.getString(OPTIONS_CLASS_NAME));
+				
+				installWidget(context, cn, options.getInt(OPTIONS_SCREEN, -1),
 						containerType, options.getInt(OPTIONS_X, -1),
 						options.getInt(OPTIONS_Y, -1),
 						options.getInt(OPTIONS_ROWS, -1),
@@ -209,38 +213,35 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	        } catch ( JSONException je ) {
 	        	je.printStackTrace();
 	        }
-	        Log.d("XXXX", "fromJsonToBundles.bundles = " + bundles.toString());
+	        Log.d("Homescreen", "fromJsonToBundles.bundles = " + bundles.toString());
 		return bundles;
 		
 	}
 	
 	private void addOptionString(String option, JSONObject item, Bundle bundle ) {
-        if(!item.isNull(OPTIONS_TYPE)) {
+        if(!item.isNull(option)) {
         	try {
-				bundle.putString(OPTIONS_TYPE, item.getString(OPTIONS_TYPE));
+				bundle.putString(option, item.getString(option));
 			} catch (JSONException e) {
-		
 			}
         }     
 	}
 
 	private void addOptionInt(String option, JSONObject item, Bundle bundle ) {
-        if(!item.isNull(OPTIONS_TYPE)) {
+        if(!item.isNull(option)) {
         	try {
-				bundle.putInt(OPTIONS_TYPE, item.getInt(OPTIONS_TYPE));
+				bundle.putInt(option, item.getInt(option));
 			} catch (JSONException e) {
-		
 			}
         }     
 	}
 
-	private LauncherAppWidgetInfo installWidget(Context context, Intent data, int screen,
+	private LauncherAppWidgetInfo installWidget(Context context, ComponentName cn, int screen,
 			int container, int xCoOd, int yCoOd, int spanX, int spanY,
 			boolean notify) {
 		LauncherApplication app = (LauncherApplication) context
-				.getApplicationContext();
-		Log.d("HomeScreenConfigurationReceiver.installWidget", "Installing widget.. data: " + data.toString());
-		return app.getModel().addAppWidget(context, data,
+				.getApplicationContext();		
+		return app.getModel().addAppWidget(context, cn, 
 				container, screen, xCoOd, yCoOd, spanX, spanY, true);
 	}
 	
