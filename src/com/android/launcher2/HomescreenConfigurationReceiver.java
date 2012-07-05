@@ -13,7 +13,13 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -29,6 +35,8 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	public static final String OPTIONS_Y = "y";
 	public static final String OPTIONS_ROWS = "rows";
 	public static final String OPTIONS_COLUMNS = "cols";
+	public static final String ITEM_TYPE_WIDGET = "widget";
+	public static final String ITEM_TYPE_SHORTCUT = "shortcut";
 	
 	/**
 	 * Version of this API
@@ -98,15 +106,27 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 			if (hasRequiredOptions(payload)) {
 				int containerType = options.getInt(OPTIONS_CONTAINER) > 0 ? LauncherSettings.Favorites.CONTAINER_DESKTOP
 						: LauncherSettings.Favorites.CONTAINER_HOTSEAT;
+				String itemType = null;
+				try {
+                    itemType = payload.getString( "type" );
+                } catch ( JSONException e1 ) {
+                    e1.printStackTrace();
+                }
 
 				ComponentName cn = new ComponentName(options.getString(OPTIONS_PACKAGE_NAME)
 						, options.getString(OPTIONS_CLASS_NAME));
 				
-				installWidget(context, cn, options.getInt(OPTIONS_SCREEN, -1),
-						containerType, options.getInt(OPTIONS_X, -1),
-						options.getInt(OPTIONS_Y, -1),
-						options.getInt(OPTIONS_ROWS, -1),
-						options.getInt(OPTIONS_COLUMNS, -1), true);
+				if (itemType.equals( ITEM_TYPE_WIDGET ) ) {
+				    installWidget(context, cn, options.getInt(OPTIONS_SCREEN, -1),
+	                        containerType, options.getInt(OPTIONS_X, -1),
+	                        options.getInt(OPTIONS_Y, -1),
+	                        options.getInt(OPTIONS_ROWS, -1),
+	                        options.getInt(OPTIONS_COLUMNS, -1), true);
+				} else if (itemType.equals( ITEM_TYPE_SHORTCUT ) ) {
+				    installShortCut( context, cn, options.getInt(OPTIONS_SCREEN, -1), containerType, options.getInt(OPTIONS_X, -1), options.getInt(OPTIONS_Y, -1) );
+				}
+				
+				
 				messages.put(buildResponse(options, true, 0, "OK"));
 			} else {
 				hasError = true;
@@ -264,84 +284,110 @@ public class HomescreenConfigurationReceiver extends BroadcastReceiver {
 	}
 
 
-//	private boolean installShortCut(Context context, Intent data, int screen, int container, int xCoOd, int yCoOd
-//            , boolean notify) {
-//	    
-//
-//        String name = data.getStringExtra(Intent.EXTRA_SHORTCUT_NAME);
-//       
-//
-//        if (findEmptyCell(context, new int[] {xCoOd, yCoOd}, screen)) {
-//            Intent intent = data.getParcelableExtra(Intent.EXTRA_SHORTCUT_INTENT);
-//            if (intent != null) {
-//                if (intent.getAction() == null) {
-//                    intent.setAction(Intent.ACTION_VIEW);
-//                }
-//
-//                // By default, we allow for duplicate entries (located in
-//                // different places)
-//                boolean duplicate = data.getBooleanExtra(Launcher.EXTRA_SHORTCUT_DUPLICATE, true);
-//                if (duplicate || !LauncherModel.shortcutExists(context, name, intent)) {
-//                    LauncherApplication app = (LauncherApplication) context.getApplicationContext();
-//                    ShortcutInfo info;
-//                    if (xCoOd == -1 && yCoOd == -1) {
-//                        info = app.getModel().addShortcut(context, data,
-//                            LauncherSettings.Favorites.CONTAINER_DESKTOP, screen, mCoordinates[0],
-//                            mCoordinates[1], true);
-//                    } else {
-//                        info = app.getModel().addShortcut(context, data,
-//                                LauncherSettings.Favorites.CONTAINER_DESKTOP, screen, xCoOd,
-//                                yCoOd, true);
-//                    }
-//                    if (info != null) {
-//                        Toast.makeText(context, context.getString(R.string.shortcut_installed, name),
-//                                Toast.LENGTH_SHORT).show();
-//                    } else {
-//                        return false;
-//                    }
-//                } else {
-//                    Toast.makeText(context, context.getString(R.string.shortcut_duplicate, name),
-//                            Toast.LENGTH_SHORT).show();
-//                }
-//
-//                return true;
-//            }
-//        } else {
-//            Toast.makeText(context, context.getString(R.string.out_of_space),
-//                    Toast.LENGTH_SHORT).show();
-//        }
-//
-//        return false;
-//    
-//	    return false;
-//
-//	}
-//	
-//	private static boolean findEmptyCell(Context context, int[] xy, int screen) {
-//        final int xCount = LauncherModel.getCellCountX();
-//        final int yCount = LauncherModel.getCellCountY();
-//        boolean[][] occupied = new boolean[xCount][yCount];
-//
-//        ArrayList<ItemInfo> items = LauncherModel.getItemsInLocalCoordinates(context);
-//        ItemInfo item = null;
-//        int cellX, cellY, spanX, spanY;
-//        for (int i = 0; i < items.size(); ++i) {
-//            item = items.get(i);
-//            if (item.container == LauncherSettings.Favorites.CONTAINER_DESKTOP) {
-//                if (item.screen == screen) {
-//                    cellX = item.cellX;
-//                    cellY = item.cellY;
-//                    spanX = item.spanX;
-//                    spanY = item.spanY;
-//                    for (int x = cellX; x < cellX + spanX && x < xCount; x++) {
-//                        for (int y = cellY; y < cellY + spanY && y < yCount; y++) {
-//                            occupied[x][y] = true;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//
-//        return CellLayout.findVacantCell(xy, 1, 1, xCount, yCount, occupied);
-//    }
+	private boolean installShortCut(Context context, ComponentName cn, int screen, int container, int xCoOd, int yCoOd) {    
+	            
+	    String name = getAppName(context, cn.getPackageName());
+	    Drawable icon = getAppIcon(context, cn);
+        BitmapDrawable bd = (BitmapDrawable) icon;
+	    Intent shortcutIntent = new Intent();
+        shortcutIntent.setClassName(cn.getPackageName(), cn.getClassName());
+        shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        
+        Intent data = new Intent();
+        data.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+        data.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
+        data.putExtra(Intent.EXTRA_SHORTCUT_ICON, bd.getBitmap());
+
+        if (findEmptyCell(context, new int[] {xCoOd, yCoOd}, screen)) {
+            if (shortcutIntent != null) {
+                if (shortcutIntent.getAction() == null) {
+                    shortcutIntent.setAction(Intent.ACTION_VIEW);
+                }
+
+                // By default, we allow for duplicate entries (located in
+                // different places)
+                 boolean duplicate = data.getBooleanExtra(Launcher.EXTRA_SHORTCUT_DUPLICATE, true);
+                if ( duplicate || !LauncherModel.shortcutExists(context, name, shortcutIntent)) {
+                    LauncherApplication app = (LauncherApplication) context.getApplicationContext();
+                    ShortcutInfo info;
+                    if (xCoOd == -1 && yCoOd == -1) {
+                        info = app.getModel().addShortcut(context, data,
+                            LauncherSettings.Favorites.CONTAINER_DESKTOP, screen, xCoOd,
+                            yCoOd, true);
+                    } else {
+                        info = app.getModel().addShortcut(context, data,
+                                LauncherSettings.Favorites.CONTAINER_DESKTOP, screen, xCoOd,
+                                yCoOd, true);
+                    }
+                    if (info != null) {
+                        Toast.makeText(context, context.getString(R.string.shortcut_installed, name),
+                                Toast.LENGTH_SHORT).show();
+                    } else {
+                        return false;
+                    }
+                } else {
+                    Toast.makeText(context, context.getString(R.string.shortcut_duplicate, name),
+                            Toast.LENGTH_SHORT).show();
+                }
+
+                return true;
+            }
+        } else {
+            Toast.makeText(context, context.getString(R.string.out_of_space),
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        return false; 
+
+	}
+	
+	private static boolean findEmptyCell(Context context, int[] xy, int screen) {
+        final int xCount = LauncherModel.getCellCountX();
+        final int yCount = LauncherModel.getCellCountY();
+        boolean[][] occupied = new boolean[xCount][yCount];
+
+        ArrayList<ItemInfo> items = LauncherModel.getItemsInLocalCoordinates(context);
+        ItemInfo item = null;
+        int cellX, cellY, spanX, spanY;
+        for (int i = 0; i < items.size(); ++i) {
+            item = items.get(i);
+            if (item.container == LauncherSettings.Favorites.CONTAINER_DESKTOP) {
+                if (item.screen == screen) {
+                    cellX = item.cellX;
+                    cellY = item.cellY;
+                    spanX = item.spanX;
+                    spanY = item.spanY;
+                    for (int x = cellX; x < cellX + spanX && x < xCount; x++) {
+                        for (int y = cellY; y < cellY + spanY && y < yCount; y++) {
+                            occupied[x][y] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return CellLayout.findVacantCell(xy, 1, 1, xCount, yCount, occupied);
+    }
+	
+	private String getAppName(Context context, String packageName) {
+	    final PackageManager pm = context.getPackageManager();
+	    android.content.pm.ApplicationInfo ai;
+	    try {
+	        ai = pm.getApplicationInfo(packageName, 0);
+	    } catch (final NameNotFoundException e) {
+	        ai = null;
+	    }
+	    return ( String ) ( ai != null ? pm.getApplicationLabel(ai) : "(unknown)" );
+	}
+	
+	private Drawable getAppIcon(Context context, ComponentName cn) {
+	    final PackageManager pm = context.getPackageManager();
+	    try {
+            return pm.getActivityIcon(cn);
+        } catch ( NameNotFoundException e ) {
+            e.printStackTrace();
+            return null;
+        }
+	}
 }

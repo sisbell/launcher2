@@ -1910,6 +1910,7 @@ public class LauncherModel extends BroadcastReceiver {
 
         return info;
     }
+    
 
     boolean queueIconToBeChecked(HashMap<Object, byte[]> cache, ShortcutInfo info, Cursor c,
             int iconIndex) {
